@@ -1,0 +1,13 @@
+{
+	"name": "",
+	"description": "",
+	"author": "Maksim Lebedev",
+	"dependencies": {
+		"jquery": "^3.1.1",
+		"magnific-popup": "^1.1.0"
+	},
+	"scripts": {
+		"clean": "gulp clean",
+		"start": "gulp"
+	}
+}
