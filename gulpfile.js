@@ -1,33 +1,34 @@
 'use strict'
 
-const path 					= require('path')
-const del 					= require('del')
-const gulp 					= require('gulp')
+const keys 						= require('./gulpkeys.js');
+const path 						= require('path')
+const del 						= require('del')
+const gulp 						= require('gulp')
 const sourcemaps 			= require('gulp-sourcemaps')
-const browserSync 			= require('browser-sync').create()
+const browserSync 		= require('browser-sync').create()
 const postcss 				= require('gulp-postcss')
 const svgSprite 			= require('gulp-svg-sprite')
-const gulpif 				= require('gulp-if')
+const gulpif 					= require('gulp-if')
 const plumber 				= require('gulp-plumber')
-const notify 				= require('gulp-notify')
+const notify 					= require('gulp-notify')
 const uglifyjs 				= require('gulp-uglifyjs')
-const concat 				= require('gulp-concat')
+const concat 					= require('gulp-concat')
 const browserify 			= require('browserify')
 const babelify 				= require('babelify')
 const watchify 				= require('watchify')
-const source 				= require('vinyl-source-stream')
-const buffer 				= require('vinyl-buffer')
+const source 					= require('vinyl-source-stream')
+const buffer 					= require('vinyl-buffer')
 const cssnext 				= require('postcss-cssnext')
-const cssnano				= require("gulp-cssnano")
-const postcssNested 		= require("postcss-nested")
-const postcssImport 		= require("postcss-import")
-const newer 				= require('gulp-newer')
+const cssnano					= require("gulp-cssnano")
+const postcssNested 	= require("postcss-nested")
+const postcssImport 	= require("postcss-import")
+const newer 					= require('gulp-newer')
 const remember 				= require('gulp-remember')
-const cached 				= require('gulp-cached')
+const cached 					= require('gulp-cached')
 const imagemin 				= require('gulp-imagemin')
 const pngquant 				= require('imagemin-pngquant')
-const imageminSvgo 			= require('imagemin-svgo')
-const es 					= require('event-stream')
+const imageminSvgo 		= require('imagemin-svgo')
+const es 							= require('event-stream')
 const tinypng 				= require('gulp-tinypng')
 
 var config = {
@@ -204,7 +205,7 @@ gulp.task('images', function(callback) {
 			.pipe(newer(mappedFiles[path].dst))
 			.pipe(gulpif(
 				(config.env === 'prod' && ['**/*.png','**/*.jpg']), 
-				tinypng('4ZqKPaFVLzm22rdBdxXLt67utMzi7Zqu'), 
+				tinypng(keys.tynepng), 
 				imagemin({
 					progressive: true,
 					svgoPlugins: [
