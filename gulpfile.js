@@ -19,11 +19,8 @@ const source 				= require('vinyl-source-stream')
 const buffer 				= require('vinyl-buffer')
 const cssnext 				= require('postcss-cssnext')
 const cssnano				= require("gulp-cssnano")
-const postcssOpacity 		= require("postcss-opacity")
 const postcssNested 		= require("postcss-nested")
-const postcssClearfix 		= require("postcss-clearfix")
 const postcssImport 		= require("postcss-import")
-const cssMqpacker 			= require("css-mqpacker")
 const newer 				= require('gulp-newer')
 const remember 				= require('gulp-remember')
 const cached 				= require('gulp-cached')
@@ -41,16 +38,18 @@ var config = {
 	dst: "dist", 
 	images: {
 		src: ['/images/**/*.{jpg,png,svg,gif}', '/images/favicons/**/*.*'],
+		base: '/images', 
 		watch: '/images/**/*.*', 
 		dst: '/images/'
 	}, 
 	files: {
 		src: ['/files/**/*.*'],
+		base: '/files', 
 		dst: '/files/'
 	}, 
 	templates: {
 		src: ['/**/*.{php,html,tpl,json}', '**/.htaccess'],
-		watch: '/**/*.*',
+		watch: '/**/*.{php,html,tpl,json}',
 		dst: ''
 	},
 	js: {
@@ -112,10 +111,11 @@ gulp.task('scripts', done => {
 		}))
 
 		const bundle = () => {
-		return b.bundle()
-			.pipe(source(fileDistName))
-			.pipe(buffer())
-			.pipe(gulp.dest(config.dst+config.js.dst))
+			return b.bundle()
+				.on('error', handleErrors)
+				.pipe(source(fileDistName))
+				.pipe(buffer())
+				.pipe(gulp.dest(config.dst+config.js.dst))
 		}
 
 		b.on('update', bundle)
@@ -128,9 +128,6 @@ gulp.task('styles', function(callback) {
 	var processors = [
 		postcssImport(), 
 		postcssNested(), 
-		postcssOpacity(), 
-		postcssClearfix(), 
-		cssMqpacker(), 
 		cssnext({
 			"browsers": "last 5 versions"
 		})
@@ -184,21 +181,27 @@ gulp.task('templates', function(callback) {
 gulp.task('images', function(callback) {
 	const mappedFiles = {}
 	config.files.src.map((path) => {
-		mappedFiles[config.src+path] = config.dst+config.files.dst
+		mappedFiles[config.src+path] = {
+			dst: config.dst+config.files.dst, 
+			base: config.src+config.files.base
+		}
 	})
 	config.images.src.map((path) => {
-		mappedFiles[config.src+path] = config.dst+config.images.dst
+		mappedFiles[config.src+path] = {
+			dst: config.dst+config.images.dst, 
+			base: config.src+config.images.base
+		}
 	})
 
 	Object.keys(mappedFiles).map((path) => {
-		gulp.src(path)
+		gulp.src(path, {base: mappedFiles[path].base})
 			.pipe(plumber({
 					errorHandler: notify.onError(err => ({
 					title: 'Images',
 					message: err.message
 				}))
 			}))
-			.pipe(newer(mappedFiles[path]))
+			.pipe(newer(mappedFiles[path].dst))
 			.pipe(gulpif(
 				(config.env === 'prod' && ['**/*.png','**/*.jpg']), 
 				tinypng('4ZqKPaFVLzm22rdBdxXLt67utMzi7Zqu'), 
@@ -211,7 +214,7 @@ gulp.task('images', function(callback) {
 					use: [pngquant()]
 				})
 			))
-			.pipe(gulp.dest(mappedFiles[path]))
+			.pipe(gulp.dest(mappedFiles[path].dst))
 	})
 
 	callback()
