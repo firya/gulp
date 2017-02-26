@@ -33,45 +33,45 @@ const tinypng 				= require('gulp-tinypng')
 
 var config = {
 	env: 'dev',
-	url: "gulp.dev", 
-	root: "./", 
-	src: "src", 
-	dst: "dist", 
+	url: "gulp.dev",
+	root: "./",
+	src: "src",
+	dst: "dist",
 	images: {
 		src: ['/images/**/*.{jpg,png,svg,gif}', '/images/favicons/**/*.*'],
-		base: '/images', 
-		watch: '/images/**/*.*', 
+		base: '/images',
+		watch: '/images/**/*.*',
 		dst: '/images/'
-	}, 
+	},
 	files: {
 		src: ['/files/**/*.*'],
-		base: '/files', 
+		base: '/files',
 		dst: '/files/'
-	}, 
+	},
 	templates: {
 		src: ['/**/*.{php,html,tpl,json}', '**/.htaccess'],
 		watch: '/**/*.{php,html,tpl,json}',
 		dst: ''
 	},
 	js: {
-		src: ['/js/scripts.js'], 
+		src: ['/js/scripts.js'],
 		dst: '/js/'
-	}, 
+	},
 	css: {
-		src: ['/css/style.css'], 
-		watch: '/css/**/*.css', 
+		src: ['/css/style.css'],
+		watch: '/css/**/*.css',
 		dst: '/css/'
-	}, 
+	},
 	sprites: {
-		src: '/sprites/**/*.svg', 
+		src: '/sprites/**/*.svg',
 		dst: '/images/'
 	}
 }
 
 gulp.task('serve', function() {
 	browserSync.init({
-		open: false, 
-		proxy: config.url, 
+		open: false,
+		proxy: config.url,
 		notify: false
 	})
 
@@ -94,20 +94,20 @@ gulp.task('scripts', done => {
 	}
 	const tasks = config.js.src.map(entry => {
 		const filePath = config.src+entry
-		
+
 		let fileDistName = entry.split('/')
 		fileDistName = fileDistName[fileDistName.length - 1]
 
 		const b = browserify({
-			entries: filePath, 
-			debug: (config.env == 'dev') ? true : false, 
+			entries: filePath,
+			debug: (config.env == 'dev') ? true : false,
 			cache: {},
 			packageCache: {},
 			extensions: ['js', 'jsx'],
 			plugin: plugins,
 			fullPaths: true
 		}).transform(babelify.configure({
-			presets: ["es2015", "stage-0"], 
+			presets: ["es2015", "stage-0"],
 			plugins: ["transform-decorators-legacy"]
 		}))
 
@@ -116,6 +116,7 @@ gulp.task('scripts', done => {
 				.on('error', handleErrors)
 				.pipe(source(fileDistName))
 				.pipe(buffer())
+				.pipe(gulpif(config.env === 'prod', uglifyjs()))
 				.pipe(gulp.dest(config.dst+config.js.dst))
 		}
 
@@ -127,8 +128,8 @@ gulp.task('scripts', done => {
 
 gulp.task('styles', function(callback) {
 	var processors = [
-		postcssImport(), 
-		postcssNested(), 
+		postcssImport(),
+		postcssNested(),
 		cssnext({
 			"browsers": "last 5 versions"
 		})
@@ -154,13 +155,13 @@ gulp.task('styles', function(callback) {
 			.pipe(concat(mappedFiles[path]))
 			.pipe(postcss(processors))
 			.pipe(gulpif(config.env === 'prod', cssnano({
-				core: true, 
+				core: true,
 				discardComments: {removeAllButFirst: true}
 			})))
 			.pipe(gulpif(config.env === 'dev', sourcemaps.write('')))
 			.pipe(gulp.dest(config.dst+config.css.dst))
 	})
-	
+
 	callback()
 })
 
@@ -183,13 +184,13 @@ gulp.task('images', function(callback) {
 	const mappedFiles = {}
 	config.files.src.map((path) => {
 		mappedFiles[config.src+path] = {
-			dst: config.dst+config.files.dst, 
+			dst: config.dst+config.files.dst,
 			base: config.src+config.files.base
 		}
 	})
 	config.images.src.map((path) => {
 		mappedFiles[config.src+path] = {
-			dst: config.dst+config.images.dst, 
+			dst: config.dst+config.images.dst,
 			base: config.src+config.images.base
 		}
 	})
@@ -204,8 +205,8 @@ gulp.task('images', function(callback) {
 			}))
 			.pipe(newer(mappedFiles[path].dst))
 			.pipe(gulpif(
-				(config.env === 'prod' && ['**/*.png','**/*.jpg']), 
-				tinypng(keys.tynepng), 
+				(config.env === 'prod' && ['**/*.png','**/*.jpg']),
+				tinypng(keys.tynepng),
 				imagemin({
 					progressive: true,
 					svgoPlugins: [
@@ -236,8 +237,8 @@ gulp.task('sprites', function(callback) {
 				plugins: [
 					{removeViewBox: false},
 					{cleanupIDs: false},
-					{removeTitle : true}, 
-					{removeUselessStrokeAndFill : true}, 
+					{removeTitle : true},
+					{removeUselessStrokeAndFill : true},
 					{removeAttrs: {attrs: ['fill', 'stroke']}}
 				]
 			})
@@ -275,10 +276,10 @@ gulp.task('watch', function() {
 })
 
 gulp.task('default', gulp.series(gulp.parallel(
-	'templates', 
-	'scripts', 
-	'styles', 
-	'images', 
+	'templates',
+	'scripts',
+	'styles',
+	'images',
 	'sprites'
 ), gulp.parallel('watch', 'serve')))
 
@@ -287,13 +288,25 @@ gulp.task('setProd', function(callback) {
 	callback()
 })
 gulp.task('build', gulp.series(
-	'clean', 
-	'setProd', 
+	'clean',
+	'setProd',
 	gulp.parallel(
-		'templates', 
-		'scripts', 
-		'styles', 
-		'images', 
+		'templates',
+		'scripts',
+		'styles',
+		'images',
 		'sprites'
 	))
+)
+gulp.task('build:js', gulp.series(
+	'setProd',
+	'scripts'
+)
+gulp.task('build:css', gulp.series(
+	'setProd',
+	'styles'
+)
+gulp.task('build:images', gulp.series(
+	'setProd',
+	'images'
 )
